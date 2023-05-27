@@ -1,199 +1,131 @@
-import math
-import uuid
-from random import random
-
-from django.contrib.auth import authenticate
-from django.shortcuts import render
-from urllib import request
-from rest_framework import status
-from rest_framework.authtoken.models import Token
-from rest_framework.views import APIView
-from rest_framework import status, generics
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from .serializers import UserSerializer
+from django.contrib.auth import authenticate, login, logout
+from .token import get_user_token
+from .models import User, SeekerProfile
 
-from .models import User
-from .serializers import AuthAdminRegistrationSerializer, AuthUserRegistrationSerializer, AuthUserLoginSerializer, \
-    UserSerializer
 
+# from app1.models import Wilaya, Kata, Mtaa, Citizen
 
 # Create your views here.
 
-
-class AuthAdminRegistrationView(APIView):
-    serializer_class = AuthAdminRegistrationSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        valid = serializer.is_valid(raise_exception=True)
-
-        if valid:
-            serializer.save()
-            status_code = status.HTTP_201_CREATED
-
-            response = {
-                'success': True,
-                'statusCode': status_code,
-                'message': 'User successfully registered!',
-                'user': serializer.data
-            }
-
-            return Response(response, status=status_code)
-
-
-class AuthUserRegistrationView(APIView):
-    serializer_class = AuthUserRegistrationSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
+@api_view(["POST", "GET"])
+@permission_classes([AllowAny])
+def RegisterUser(request):
+    if request.method == "POST":
         data = request.data
-        if 'role' not in data:
-            return Response('bad request', status=403)
+        username = data['username']
+        # user = None
+        user = User.objects.filter(username=username)
+        if user:
+            message = {'message': 'user does exist'}
+            return Response(message)
 
-        if str(data['role']) == '1':
-            serializer = AuthAdminRegistrationSerializer(data=data)
-
-        elif str(data['role']) == '2':
-            serializer = AuthUserRegistrationSerializer(data=data)
-
-        valid = serializer.is_valid(raise_exception=True)
-
-        if valid:
-            try:
-                serializer.save()
-            except ValueError:
-                return Response({
-                    'success': False,
-                    'statusCode': 401
-                })
-            status_code = status.HTTP_201_CREATED
-
-            response = {
-                'success': True,
-                'statusCode': status_code,
-                'message': 'User successfully registered!',
-                'user': serializer.data
-            }
-
-            return Response(response, status=status_code)
-
-
-def generateOTP():
-    # Declare a digits variable
-    # which stores all digits
-    digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    OTP = ""
-
-    # length of password can be changed
-    # by changing value in range
-    for i in range(4):
-        OTP += digits[math.floor(random() * 10)]
-
-    print("OTP", OTP)
-    return OTP
-
-
-class RequesOTP(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        if 'email' in request.data:
-            code = generateOTP()
-            print(code)
-            try:
-                user = User.objects.get(email=str(request.data['email']))
-                print('saving')
-                user.set_password(code)
-                user.save()
-                # todo send email with code
-            except User.DoesNotExist:
-                return Response({"status": False})
-
-        return Response({"status": False})
-
-
-class VerifyOTP(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        if "email" in data and "code" in data:
-            print(data)
-            try:
-                the_user = User.objects.get(email=data['email'])
-                user = authenticate(email=the_user.email, password=data['code'])
-                if user is not None:
-                    token = Token.objects.get_or_create(user=user)
-                    user_serializer = UserSerializer(instance=user, many=False)
-
-                    response = {
-                        'token': str(token[0]),
-                        'user': user_serializer.data
-                    }
-                    return Response(response)
-
-                return Response({"message": "Invalid OTP"}, status=401)
-            except User.DoesNotExist:
-                return Response("User not found", status=404)
-
-        return Response({"message": "Bad Request"}, status=400)
-
-
-class GetUsers(APIView):
-    def get(self, request):
-        user = User.objects.all()
-        serializer = UserSerializer(user, many=True)
-        return Response(serializer.data)
-
-
-class AuthUserRegistrationView(APIView):
-    serializer_class = AuthUserRegistrationSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        print(request.data)
-        print('jdhshshd')
-        serializer = self.serializer_class(data=request.data)
-        print('333333')
-        valid = serializer.is_valid()
-        print('he')
-        if valid:
-            print('here')
+        serializer = UserSerializer(data=data)
+        if serializer.is_valid():
             serializer.save()
-
-            return Response(serializer.data, status=201)
-
-
-        print(serializer.errors)
-        return Response(serializer.errors)
-
-
-class AuthUserLoginView(APIView):
-    serializer_class = AuthUserLoginSerializer
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        print("Data", request.data)
-        serializer = self.serializer_class(data=request.data)
-        valid = serializer.is_valid(raise_exception=True)
-
-        if valid:
-            status_code = status.HTTP_200_OK
+            message = {'save': True}
+            return Response(message)
+        else:
+            message = {'save': False}
+            return Response(message)
+    return Response({'message': "hey bro"})
 
 
-            response = {
-                'success': True,
-                'statusCode': status_code,
-                'message': 'User logged in successfully',
-                'token': serializer.data['token'],
+# {
+#     "first_name":"mike",
+#     "last_name":"cyril",
+#     "username":"mike",
+#     "email":"mike@gmail.com",
+#     "password":"123"
+#     "type":"seeker"
+# }
 
-                'user': {
-                    'email': serializer.data['email'],
-                    'role': serializer.data['role'],
-                    'id': serializer.data['id'],
-                    'phone_number': serializer.data['phone_number']
-                }
-            }
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def LoginView(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    print(request.data)
+    user = authenticate(username=username, password=password)
 
-            return Response(response, status=status_code)
+    if user is not None:
+        login(request, user)
+        user_id = User.objects.get(username=username)
+
+        response = {
+            'msg': 'success',
+            'token': get_user_token(user),
+            'user_id': user_id.id,
+            'first_name': user_id.first_name,
+            'last_name': user_id.last_name,
+            'username': user_id.username,
+            'email': user_id.email,
+            'type': user_id.type
+        }
+
+        return Response(response)
+    else:
+        response = {
+            'msg': 'fail',
+            'info': 'Invalid username or password',
+        }
+
+        return Response(response)
+
+
+# {
+#     "username": "mike",
+#     "password": "123"
+# }
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def CreateProfile(request):
+    # print(request.POST)
+    data = request.POST
+    user = User.objects.get(id=data['user_id'])
+    profile = SeekerProfile.objects.create(
+        user_id=user,
+        last_job_title=data['last_job_title'],
+        institute_name=data['institute_name'],
+        supervisor_name=data['supervisor_name'],
+        supervisor_contact=data['supervisor_contact'],
+        starting_date=data['starting_date'],
+        end_date=data['end_date'],
+        o_level_index=data['o_level_index'],
+        education_level=data['education_level'],
+        program=data['program'],
+        country=data['country'],
+        date_of_birth=data['date_of_birth'],
+        gender=data['gender'],
+        phone=data['phone'],
+        cv=request.FILES['cv']
+    )
+    profile.save()
+    return Response({'message': 'successful'})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def GetProfile(request, user_id):
+    user = User.objects.get(id=user_id)
+    data = SeekerProfile.objects.values('id',
+                                        'last_job_title',
+                                        'institute_name',
+                                        'supervisor_name',
+                                        'supervisor_contact',
+                                        'starting_date',
+                                        'end_date',
+                                        'o_level_index',
+                                        'education_level',
+                                        'program',
+                                        'country',
+                                        'date_of_birth',
+                                        'gender',
+                                        'phone',
+                                        'cv').get(user_id=user)
+    return Response(data)

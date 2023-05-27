@@ -1,48 +1,53 @@
-from django.utils import timezone
-
-from django.conf import settings
-from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import PermissionsMixin
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from users_management.models import *
 
 
-from .manager import CustomUserManager
-
-
-# Create your models here.
-class User(AbstractBaseUser, PermissionsMixin):
-    ADMIN = 1
-    USER = 2
-
-    ROLE_CHOICES = (
-        (ADMIN, 'Admin'),
-        (USER, 'User'),
-
-
-    )
-
-    email = models.EmailField(unique=True)
-    phone_number = models.CharField(verbose_name="Mobile Number", max_length=20, unique=True, null=True)
-    password = models.CharField(max_length=50, blank=True)
-    role = models.PositiveSmallIntegerField(
-        choices=ROLE_CHOICES, blank=True, null=True, default=7)
-    date_joined = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-    # a admin user; non super-user
-    is_staff = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
-    is_deleted = models.BooleanField(default=False)
-    created_date = models.DateTimeField(default=timezone.now)
-    modified_date = models.DateTimeField(default=timezone.now)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name='+')
-    modified_by = models.EmailField()
-
-    USERNAME_FIELD = 'email'
-    # REQUIRED_FIELDS = ['phone_number']
-
-    objects = CustomUserManager()
+class User(AbstractUser):
+    choice = (('seeker', 'seeker'), ('hire', 'hire'))
+    type = models.CharField(max_length=20, choices=choice)
+    USERNAME_FIELD = "username"
 
     def __str__(self):
-        return self.phone_number
+        return self.username
+
+    class Meta:
+        db_table = 'user'
+
+
+class SeekerProfile(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    gender = (('male', 'male'), ('female', 'female'))
+    count = (('Tanzania', 'Tanzania'), ('Kenya', 'Kenya'),
+             ('Uganda', 'Uganda'))
+    level = (('ordinary diploma', 'ordinary diploma'),
+             ('bachelor degree', 'bachelor degree'),
+             ('masters', 'masters'))
+    # choice
+    last_job_title = models.CharField(max_length=200, null=True)
+    institute_name = models.CharField(max_length=200, null=True)
+    supervisor_name = models.CharField(max_length=200, null=True)
+    supervisor_contact = models.CharField(max_length=10, null=True)
+    starting_date = models.DateField(auto_now_add=True, null=True)
+    end_date = models.DateField(auto_now_add=True, null=True)
+
+    # required info
+    o_level_index = models.CharField(max_length=20)
+    education_level = models.CharField(max_length=200, choices=level)
+    program = models.CharField(max_length=200)
+    country = models.CharField(max_length=30, choices=count)
+    date_of_birth = models.DateField()
+    gender = models.CharField(max_length=20, choices=gender)
+    phone = models.CharField(max_length=10)
+
+    # to upload cv
+    cv = models.FileField(upload_to="cvs/")
+
+    def __str__(self):
+        return f'{self.user_id.username} = {self.user_id.type}'
+
+    class Meta:
+        db_table = 'seeker_profile'
+
 
 

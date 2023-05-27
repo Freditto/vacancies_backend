@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-@w#nrl$itvhcbbj2@7&tg^*$e9mr51$6o5fu&6qf)4kxmp7a*!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -45,24 +45,29 @@ INSTALLED_APPS = [
     'vacancies_management',
     'pre_interview_management',
     'cv_management',
+
+    'corsheaders',
 ]
 
 
 # REST framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # for normal authentication
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication'
-    ),
+        'rest_framework.authentication.SessionAuthentication',
+        # jwt configgurations
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
 
+    ]
 }
 
+
+AUTH_USER_MODEL = 'users_management.User'
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,6 +76,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'vacancies_backend.urls'
 
@@ -93,6 +100,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'vacancies_backend.wsgi.application'
 
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases

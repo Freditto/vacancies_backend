@@ -1,13 +1,16 @@
-from django.contrib import admin
 from django.urls import path
-from .views import PersonalInformationView, AcademicQualificationView, WorkingExperienceView, OtherPreferenceView, RefereeView, OtherAttachmentView
+from .views import *
+
+app_name = 'app1'
 
 urlpatterns = [
-    path('personal-info', PersonalInformationView.as_view()),
-    path('academic-qualification', AcademicQualificationView.as_view()),
-    path('working-experience', WorkingExperienceView.as_view()),
-    path('other-preference', OtherPreferenceView.as_view()),
-    path('referees', RefereeView.as_view()),
-    path('other-attachment', OtherAttachmentView.as_view()),
-
+    path('setQuestion/<int:vac_id>', setQuestions),
+    path('getQuestion/<int:vac_id>', getMultipleChoice),
+    path('addRequirement', addRequirement),
+    path('getRequirements/<int:vac_id>', getRequirements),
+    path('setAnswer', setAnswer),
+    path('insertVacancy', InsertVacancy),
+    path('getVacancies', GetVacancies),
+    path('vacancyInfo/<int:vac_id>', VacancyInfo),
+    path('addDefaultQuestion', DefaultQuestion),
 ]

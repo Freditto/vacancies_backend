@@ -1,15 +1,13 @@
-from django.contrib import admin
 from django.urls import path
-from .views import GetUsers, AuthUserRegistrationView, AuthUserLoginView
+from .views import RegisterUser, LoginView, CreateProfile, GetProfile
+from rest_framework_simplejwt import views as jwt_views
+
+app_name = 'authUser'
 
 urlpatterns = [
-
-    path('users', GetUsers.as_view()),
-
-    path(r'register', AuthUserRegistrationView.as_view()),
-    path(r'login', AuthUserLoginView.as_view()),
-
-
-
-
+    path('register', RegisterUser),
+    path('login', LoginView),
+    path('create_profile', CreateProfile),
+    path('get_profile/<int:user_id>', GetProfile),
+    path('refresh_token/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]
