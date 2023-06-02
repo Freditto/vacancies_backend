@@ -1,4 +1,5 @@
 from django.db import models
+from users_management.models import *
 
 
 # Create your models here.
@@ -49,3 +50,17 @@ class Answer(models.Model):
 
     def __str__(self):
         return f'question {self.question_id.question} answer {self.answer}'
+
+
+class Attempts(models.Model):
+    vacancy = models.ForeignKey(JobVacancy, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    percent = models.CharField(max_length=20)
+    state = models.CharField(max_length=10)
+
+    class Meta:
+        db_table = 'attempts'
+
+    def __str__(self):
+        return f''
+

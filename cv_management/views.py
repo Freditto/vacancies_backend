@@ -101,24 +101,24 @@ def getMultipleChoice(request, vac_id):
 @permission_classes([AllowAny])
 def setAnswer(request, seeker_id):
     # kata = Kata.objects.get(id=request.data['kata_id'])
-    seeker = SeekerProfile.objects.get(id=seeker_id)
-    data = request.data
+    seeker = SeekerProfile.objects.get(user_id=User.objects.get(id=seeker_id))
+    data = request.data['answers']
     fail = []
     pas = []
     d_q = []
     for r in data:
         question = Question.objects.get(id=r['question_id'])
         if not question.is_checkable:
-            if len(Answer.objects.filter(Q(id=r['answer_id']) and Q(question_id=question) and Q(is_correct=True)) == 1):
+            if Answer.objects.filter(Q(id=r['answer_id']) and Q(question_id=question) and Q(is_correct=True)):
                 pas.append(1)
             else:
                 fail.append(1)
         else:
             d_q.append(r)
-
+    print(d_q)
     for r2 in d_q:
         is_corr = False
-        ans = Answer.objects.get(id=r2['answer'])
+        ans = Answer.objects.get(id=r2['answer_id'])
         try:
             if ans.answer == seeker.education_level:
                 is_corr = True
@@ -153,11 +153,41 @@ def setAnswer(request, seeker_id):
         status = "failed"
     else:
         status = "pass"
+    vac = request.data['vac_id']
+    user_id = request.data['user_id']
 
-    data = {'percent': percent, 'status': status}
-    response = {"data": data}
-    return Response(response)
+    print(percent)
+    print(status)
+    try:
+        attempts = Attempts.objects.filter(
+            Q(vacancy=JobVacancy.objects.get(id=vac)) and Q(user=User.objects.get(id=user_id)))
+        print('-------------===--------')
+        print(len(attempts))
+        if len(attempts) == 3:
+            message = {'message': 'failed to save attempt', 'success': False}
+            return Response(message)
+        print('000000000000')
+        b = len(attempts)/0
 
+    except:
+        print('reached -----------')
+        attempt = Attempts.objects.create(
+            vacancy=JobVacancy.objects.get(id=vac),
+            user=User.objects.get(id=user_id),
+            percent=str(percent),
+            state=status
+        )
+        attempt.save()
+
+    data = {'percent': percent, 'status': status, 'success': True}
+    return Response(data)
+
+
+# {
+#     'vac_id': 1,
+#     'user_id': 2,
+#     'answers': []
+# }
 
 # [
 #     {'question_id': 1, 'answer_id': 1},
@@ -254,6 +284,7 @@ def addRequirement(request):
     response = {"save": True}
     return Response(response)
 
+
 # {
 #     "requirement": "bra bra",
 #     "vac_id": 1
@@ -267,3 +298,20 @@ def getRequirements(request, vac_id):
     req = Requirement.objects.values('requirement').filter(job=job)
     return Response(req)
 
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def getAttempts(request, user_id):
+    attempts = Attempts.objects.filter(user=User.objects.get(id=user_id))
+    datas = []
+    for data in attempts:
+        datas.append(
+            {
+                'job': data.vacancy.jobTitle,
+                'company': data.vacancy.company,
+                'percent': data.percent,
+                'status': data.state
+            }
+        )
+    print(datas)
+    return Response(datas)

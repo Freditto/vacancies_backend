@@ -6,9 +6,10 @@ app_name = 'app1'
 urlpatterns = [
     path('setQuestion/<int:vac_id>', setQuestions),
     path('getQuestion/<int:vac_id>', getMultipleChoice),
+    path('getAttempts/<int:user_id>', getAttempts),
     path('addRequirement', addRequirement),
     path('getRequirements/<int:vac_id>', getRequirements),
-    path('setAnswer', setAnswer),
+    path('setAnswer/<int:seeker_id>', setAnswer),
     path('insertVacancy', InsertVacancy),
     path('getVacancies', GetVacancies),
     path('vacancyInfo/<int:vac_id>', VacancyInfo),
